@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:8012/escape_room
+    username: root
+    password: line123

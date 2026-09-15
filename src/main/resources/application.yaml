@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: escape-room-backend
+
+  profiles:
+    active: dev

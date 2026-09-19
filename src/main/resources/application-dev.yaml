@@ -3,3 +3,15 @@ spring:
     url: jdbc:mariadb://localhost:8012/escape_room
     username: root
     password: line123
+
+  jwt:
+    secret: ZAdihQqJkJjR1Q9X1h1TYXtil1zO6x1r6Hvk1Xp4dY0agSajH50ReS0c2bd8vCUL
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG

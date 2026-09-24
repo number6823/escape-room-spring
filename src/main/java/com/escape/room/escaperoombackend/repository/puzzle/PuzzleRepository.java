@@ -5,8 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface PuzzleRepository extends JpaRepository<Puzzle,Long> {
+public interface PuzzleRepository extends JpaRepository<Puzzle, Long> {
 
     List<Puzzle> findAllByRoom_IdOrderByPuzzleOrderAsc(Long roomId);
 
+    boolean existsByRoomIdAndPuzzleOrder(Long roomId, Integer puzzleOrder);
 }

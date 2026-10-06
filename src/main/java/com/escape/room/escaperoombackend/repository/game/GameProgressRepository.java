@@ -1,6 +1,6 @@
-package com.escape.room.escaperoombackend.repository.gameprogress;
+package com.escape.room.escaperoombackend.repository.game;
 
-import com.escape.room.escaperoombackend.domain.gameprogress.GameProgress;
+import com.escape.room.escaperoombackend.domain.game.GameProgress;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

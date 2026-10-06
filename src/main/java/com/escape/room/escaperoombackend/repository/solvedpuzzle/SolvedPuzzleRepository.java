@@ -13,4 +13,8 @@ public interface SolvedPuzzleRepository extends JpaRepository<SolvedPuzzle, Long
     );
 
     List<SolvedPuzzle> findAllByGameRecordId(Long gameRecordId);
+
+    List<SolvedPuzzle> findAllByGameRecordIdOrderBySolvedAtAsc(
+            Long gameRecordId
+    );
 }

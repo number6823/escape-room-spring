@@ -2,6 +2,7 @@ package com.escape.room.escaperoombackend.service.room;
 
 import com.escape.room.escaperoombackend.domain.room.Room;
 import com.escape.room.escaperoombackend.dto.room.response.RoomResponse;
+import com.escape.room.escaperoombackend.exception.NotFoundException;
 import com.escape.room.escaperoombackend.repository.room.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,11 @@ public class RoomService {
     @Transactional(readOnly = true)
     public RoomResponse getRoom(Long roomId) {
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                "존재하지 않는 방입니다."
+                        )
+                );
 
         return new RoomResponse(room);
     }

@@ -16,21 +16,18 @@ import java.util.List;
 public class ItemController {
 
     private final ItemService itemService;
-    private InventoryService inventoryService;
+    private final InventoryService inventoryService;
 
     @GetMapping("/room/{roomId}")
-    public List<ItemResponse> getItems(
-            @PathVariable Long roomId
-    ) {
+    public List<ItemResponse> getItems(@PathVariable Long roomId) {
         return itemService.getItems(roomId);
     }
 
     @GetMapping("/{itemId}")
-    public ItemResponse getItem(
-            @PathVariable Long itemId
-    ) {
+    public ItemResponse getItem(@PathVariable Long itemId) {
         return itemService.getItem(itemId);
     }
+
     @PostMapping("/{itemId}/acquire")
     public InventoryResponse acquireItem(
             @PathVariable Long itemId,
@@ -38,9 +35,6 @@ public class ItemController {
     ) {
         String email = authentication.getName();
 
-        return inventoryService.acquireItem(
-                itemId,
-                email
-        );
+        return inventoryService.acquireItem(itemId, email);
     }
 }

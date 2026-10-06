@@ -2,6 +2,7 @@ package com.escape.room.escaperoombackend.service.item;
 
 import com.escape.room.escaperoombackend.domain.item.Item;
 import com.escape.room.escaperoombackend.dto.item.response.ItemResponse;
+import com.escape.room.escaperoombackend.exception.NotFoundException;
 import com.escape.room.escaperoombackend.repository.item.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class ItemService {
 
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new NotFoundException(
                                 "존재하지 않는 아이템입니다."
                         )
                 );

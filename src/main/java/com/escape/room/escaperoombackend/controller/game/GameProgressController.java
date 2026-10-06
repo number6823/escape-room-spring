@@ -1,8 +1,8 @@
-package com.escape.room.escaperoombackend.controller.gameprogress;
+package com.escape.room.escaperoombackend.controller.game;
 
 
-import com.escape.room.escaperoombackend.dto.gameprogress.response.GameProgressResponse;
-import com.escape.room.escaperoombackend.service.gameprogress.GameProgressService;
+import com.escape.room.escaperoombackend.dto.game.response.GameProgressResponse;
+import com.escape.room.escaperoombackend.service.game.GameProgressService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;

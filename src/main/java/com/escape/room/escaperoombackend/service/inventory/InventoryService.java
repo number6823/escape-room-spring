@@ -4,6 +4,7 @@ import com.escape.room.escaperoombackend.domain.inventory.Inventory;
 import com.escape.room.escaperoombackend.domain.item.Item;
 import com.escape.room.escaperoombackend.domain.user.User;
 import com.escape.room.escaperoombackend.dto.inventory.response.InventoryResponse;
+import com.escape.room.escaperoombackend.exception.NotFoundException;
 import com.escape.room.escaperoombackend.repository.inventory.InventoryRepository;
 import com.escape.room.escaperoombackend.repository.item.ItemRepository;
 import com.escape.room.escaperoombackend.repository.user.UserRepository;
@@ -16,18 +17,19 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
 
-    @Transactional(readOnly = true)
     public List<InventoryResponse> getMyInventory(String email) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository
+                .findByEmail(email)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new NotFoundException(
                                 "존재하지 않는 사용자입니다."
                         )
                 );
@@ -45,24 +47,30 @@ public class InventoryService {
             String email
     ) {
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository
+                .findByEmail(email)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new NotFoundException(
                                 "존재하지 않는 사용자입니다."
                         )
                 );
 
-        Item item = itemRepository.findById(itemId)
+        Item item = itemRepository
+                .findById(itemId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new NotFoundException(
                                 "존재하지 않는 아이템입니다."
                         )
                 );
 
-        if (inventoryRepository.existsByUserIdAndItemId(
-                user.getId(),
-                itemId
-        )) {
+        boolean alreadyExists =
+                inventoryRepository
+                        .existsByUserIdAndItemId(
+                                user.getId(),
+                                itemId
+                        );
+
+        if (alreadyExists) {
             throw new IllegalArgumentException(
                     "이미 획득한 아이템입니다."
             );

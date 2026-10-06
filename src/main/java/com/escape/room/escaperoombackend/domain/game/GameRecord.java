@@ -1,4 +1,4 @@
-package com.escape.room.escaperoombackend.domain.gamerecord;
+package com.escape.room.escaperoombackend.domain.game;
 
 import com.escape.room.escaperoombackend.domain.user.User;
 import jakarta.persistence.*;
@@ -40,7 +40,8 @@ public class GameRecord {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    protected GameRecord() {}
+    protected GameRecord() {
+    }
 
     public GameRecord(
             User user,
@@ -50,20 +51,21 @@ public class GameRecord {
         this.user = user;
         this.startedAt = startedAt;
         this.clearStatus = clearStatus;
+        this.hintCount = 0;
     }
 
-    public void complete() {
+    public void increaseHintCount() {
+        this.hintCount++;
+    }
 
+    public void complete(Integer penaltySeconds) {
         LocalDateTime now = LocalDateTime.now();
 
+        int basePlayTime =
+                (int) Duration.between(this.startedAt, now).getSeconds();
+
         this.completedAt = now;
-
-        this.playTimeSeconds =
-                (int) Duration.between(
-                        this.startedAt,
-                        now
-                ).getSeconds();
-
+        this.playTimeSeconds = basePlayTime + penaltySeconds;
         this.clearStatus = "CLEARED";
     }
 }

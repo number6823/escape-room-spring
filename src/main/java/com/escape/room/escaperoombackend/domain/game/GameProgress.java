@@ -1,6 +1,5 @@
-package com.escape.room.escaperoombackend.domain.gameprogress;
+package com.escape.room.escaperoombackend.domain.game;
 
-import com.escape.room.escaperoombackend.domain.gamerecord.GameRecord;
 import com.escape.room.escaperoombackend.domain.puzzle.Puzzle;
 import com.escape.room.escaperoombackend.domain.room.Room;
 import jakarta.persistence.*;

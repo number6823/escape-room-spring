@@ -1,6 +1,6 @@
-package com.escape.room.escaperoombackend.dto.gameprogress.response;
+package com.escape.room.escaperoombackend.dto.game.response;
 
-import com.escape.room.escaperoombackend.domain.gameprogress.GameProgress;
+import com.escape.room.escaperoombackend.domain.game.GameProgress;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

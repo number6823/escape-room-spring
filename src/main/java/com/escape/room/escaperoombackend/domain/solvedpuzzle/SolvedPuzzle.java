@@ -1,6 +1,6 @@
 package com.escape.room.escaperoombackend.domain.solvedpuzzle;
 
-import com.escape.room.escaperoombackend.domain.gamerecord.GameRecord;
+import com.escape.room.escaperoombackend.domain.game.GameRecord;
 import com.escape.room.escaperoombackend.domain.puzzle.Puzzle;
 import jakarta.persistence.*;
 import lombok.Getter;

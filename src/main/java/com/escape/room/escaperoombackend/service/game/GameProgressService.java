@@ -1,12 +1,14 @@
-package com.escape.room.escaperoombackend.service.gameprogress;
+package com.escape.room.escaperoombackend.service.game;
 
-import com.escape.room.escaperoombackend.domain.gameprogress.GameProgress;
-import com.escape.room.escaperoombackend.domain.gamerecord.GameRecord;
+import com.escape.room.escaperoombackend.domain.game.GameProgress;
+import com.escape.room.escaperoombackend.domain.game.GameRecord;
 import com.escape.room.escaperoombackend.domain.puzzle.Puzzle;
 import com.escape.room.escaperoombackend.domain.room.Room;
-import com.escape.room.escaperoombackend.dto.gameprogress.response.GameProgressResponse;
-import com.escape.room.escaperoombackend.repository.gameprogress.GameProgressRepository;
-import com.escape.room.escaperoombackend.repository.gamerecord.GameRecordRepository;
+import com.escape.room.escaperoombackend.dto.game.response.GameProgressResponse;
+import com.escape.room.escaperoombackend.exception.NotFoundException;
+import com.escape.room.escaperoombackend.repository.game.GameProgressRepository;
+import com.escape.room.escaperoombackend.repository.game.GameRecordRepository;
+import com.escape.room.escaperoombackend.repository.hint.UsedHintRepository;
 import com.escape.room.escaperoombackend.repository.puzzle.PuzzleRepository;
 import com.escape.room.escaperoombackend.repository.room.RoomRepository;
 import com.escape.room.escaperoombackend.repository.solvedpuzzle.SolvedPuzzleRepository;
@@ -14,37 +16,41 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class GameProgressService {
 
     private final GameProgressRepository gameProgressRepository;
     private final GameRecordRepository gameRecordRepository;
-    private final PuzzleRepository puzzleRepository;
     private final RoomRepository roomRepository;
+    private final PuzzleRepository puzzleRepository;
     private final SolvedPuzzleRepository solvedPuzzleRepository;
+    private final UsedHintRepository usedHintRepository;
 
-    @Transactional
     public void initializeProgress(GameRecord gameRecord) {
 
-        Room firstRoom = roomRepository.findAllByOrderByRoomOrderAsc()
-                .stream()
-                .findFirst()
-                .orElseThrow(() ->
-                        new IllegalStateException("게임에 등록된 방이 없습니다.")
-                );
+        List<Room> rooms = roomRepository.findAllByOrderByRoomOrderAsc();
 
-        if (gameProgressRepository
-                .findByGameRecordIdAndRoomId(
-                        gameRecord.getId(),
-                        firstRoom.getId()
-                )
-                .isPresent()) {
+        if (rooms.isEmpty()) {
+            throw new IllegalArgumentException("방이 존재하지 않습니다.");
+        }
+
+        Room firstRoom = rooms.get(0);
+
+        boolean alreadyExists =
+                gameProgressRepository
+                        .findByGameRecordIdAndRoomId(
+                                gameRecord.getId(),
+                                firstRoom.getId()
+                        )
+                        .isPresent();
+
+        if (alreadyExists) {
             return;
         }
 
@@ -53,23 +59,17 @@ public class GameProgressService {
                 .stream()
                 .filter(Puzzle::isRequired)
                 .findFirst()
-                .orElseThrow(() ->
-                        new IllegalStateException(
-                                "첫 번째 방에 필수 퍼즐이 없습니다."
-                        )
-                );
+                .orElse(null);
 
-        GameProgress progress =
-                new GameProgress(
-                        gameRecord,
-                        firstRoom,
-                        firstPuzzle
-                );
+        GameProgress progress = new GameProgress(
+                gameRecord,
+                firstRoom,
+                firstPuzzle
+        );
 
         gameProgressRepository.save(progress);
     }
 
-    @Transactional
     public void updateAfterSolve(
             GameRecord gameRecord,
             Puzzle solvedPuzzle
@@ -84,16 +84,15 @@ public class GameProgressService {
                                 currentRoom.getId()
                         )
                         .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "현재 방의 진행 기록이 없습니다."
+                                new NotFoundException(
+                                        "현재 방의 진행 정보를 찾을 수 없습니다."
                                 )
                         );
 
-        List<Puzzle> roomPuzzles =
-                puzzleRepository
-                        .findAllByRoom_IdOrderByPuzzleOrderAsc(
-                                currentRoom.getId()
-                        );
+        List<Puzzle> puzzles =
+                puzzleRepository.findAllByRoom_IdOrderByPuzzleOrderAsc(
+                        currentRoom.getId()
+                );
 
         Set<Long> solvedPuzzleIds =
                 solvedPuzzleRepository
@@ -102,7 +101,7 @@ public class GameProgressService {
                         .map(solved -> solved.getPuzzle().getId())
                         .collect(Collectors.toSet());
 
-        Puzzle nextPuzzle = roomPuzzles.stream()
+        Puzzle nextPuzzle = puzzles.stream()
                 .filter(Puzzle::isRequired)
                 .filter(puzzle ->
                         !solvedPuzzleIds.contains(puzzle.getId())
@@ -117,7 +116,10 @@ public class GameProgressService {
 
         currentProgress.clear();
 
-        unlockNextRoom(gameRecord, currentRoom);
+        unlockNextRoom(
+                gameRecord,
+                currentRoom
+        );
     }
 
     private void unlockNextRoom(
@@ -125,30 +127,49 @@ public class GameProgressService {
             Room currentRoom
     ) {
 
-        Room nextRoom = roomRepository
-                .findAllByOrderByRoomOrderAsc()
-                .stream()
-                .filter(room ->
-                        room.getRoomOrder() > currentRoom.getRoomOrder()
-                )
-                .findFirst()
-                .orElse(null);
+        List<Room> rooms =
+                roomRepository.findAllByOrderByRoomOrderAsc();
 
-        if (nextRoom == null) {
-            gameRecord.complete();
+        int currentIndex = -1;
+
+        for (int i = 0; i < rooms.size(); i++) {
+            if (rooms.get(i).getId().equals(currentRoom.getId())) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+            throw new NotFoundException(
+                    "현재 방 정보를 찾을 수 없습니다."
+            );
+        }
+
+        boolean isLastRoom =
+                currentIndex == rooms.size() - 1;
+
+        if (isLastRoom) {
+
+            int totalPenaltySeconds =
+                    usedHintRepository
+                            .findAllByGameRecordId(gameRecord.getId())
+                            .stream()
+                            .mapToInt(
+                                    usedHint ->
+                                            usedHint
+                                                    .getHint()
+                                                    .getPenaltySeconds()
+                            )
+                            .sum();
+
+            gameRecord.complete(totalPenaltySeconds);
+
             return;
         }
 
-        if (gameProgressRepository
-                .findByGameRecordIdAndRoomId(
-                        gameRecord.getId(),
-                        nextRoom.getId()
-                )
-                .isPresent()) {
-            return;
-        }
+        Room nextRoom = rooms.get(currentIndex + 1);
 
-        Puzzle firstPuzzleOfNextRoom =
+        Puzzle firstPuzzle =
                 puzzleRepository
                         .findAllByRoom_IdOrderByPuzzleOrderAsc(
                                 nextRoom.getId()
@@ -156,17 +177,13 @@ public class GameProgressService {
                         .stream()
                         .filter(Puzzle::isRequired)
                         .findFirst()
-                        .orElseThrow(() ->
-                                new IllegalStateException(
-                                        "다음 방에 필수 퍼즐이 없습니다."
-                                )
-                        );
+                        .orElse(null);
 
         GameProgress nextProgress =
                 new GameProgress(
                         gameRecord,
                         nextRoom,
-                        firstPuzzleOfNextRoom
+                        firstPuzzle
                 );
 
         gameProgressRepository.save(nextProgress);
@@ -179,13 +196,10 @@ public class GameProgressService {
     ) {
 
         gameRecordRepository
-                .findByIdAndUser_Email(
-                        gameRecordId,
-                        email
-                )
+                .findByIdAndUser_Email(gameRecordId, email)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "존재하지 않는 게임 기록입니다."
+                        new NotFoundException(
+                                "게임 기록을 찾을 수 없습니다."
                         )
                 );
 
@@ -193,10 +207,11 @@ public class GameProgressService {
                 .findAllByGameRecordId(gameRecordId)
                 .stream()
                 .sorted(
-                        Comparator.comparing(
-                                progress ->
-                                        progress.getRoom().getRoomOrder()
-                        )
+                        (a, b) ->
+                                Integer.compare(
+                                        a.getRoom().getRoomOrder(),
+                                        b.getRoom().getRoomOrder()
+                                )
                 )
                 .map(GameProgressResponse::new)
                 .toList();

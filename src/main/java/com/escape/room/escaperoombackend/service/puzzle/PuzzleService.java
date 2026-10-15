@@ -57,6 +57,9 @@ public class PuzzleService {
                                 "존재하지 않는 게임 기록입니다."
                         )
                 );
+        if ("CLEARED".equals(gameRecord.getClearStatus())) {
+            throw new IllegalArgumentException("이미 완료된 게임입니다.");
+        }
 
         Puzzle puzzle = puzzleRepository
                 .findById(puzzleId)

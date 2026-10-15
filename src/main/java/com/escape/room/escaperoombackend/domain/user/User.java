@@ -45,4 +45,10 @@ public class User {
         this.password = password;
         this.nickname = nickname;
     }
+
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
 }
